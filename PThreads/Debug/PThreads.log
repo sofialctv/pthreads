@@ -1,0 +1,3 @@
+﻿  main.c
+D:\Programacao - Estudo\Learn_C#NET\PThreads\PThreads\main.c(30): warning C4716: 'threadFunc': deve retornar um valor
+  PThreads.vcxproj -> D:\Programacao - Estudo\Learn_C#NET\PThreads\Debug\PThreads.exe
