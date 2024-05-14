@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <time.h>
+#include <math.h>
 
 #define MATRIZ_LINHAS 10000
 #define MATRIZ_COLUNAS 10000
@@ -16,26 +17,28 @@
 #define SEMENTE 321
 
 // Matriz global e variável global para contagem de primos
-int **matriz;
+int** matriz;
 int quantidade_primos = 0;
 pthread_mutex_t mutex_contador;
 
 // Função para verificar se um número é primo
 int ehPrimo(int n) {
-    if (n <= 1) return 0;
-    if (n <= 3) return 1;
-    if (n % 2 == 0 || n % 3 == 0) return 0;
-    for (int i = 5; i * i <= n; i += 6) {
-        if (n % i == 0 || n % (i + 2) == 0) return 0;
+    if (n <= 1) return 0; // se o numero for menor ou igual a 1 então nao é primo.
+
+    int limite = sqrt(n);
+    printf("%d", limite);
+    for (int i = 2; i * i <= n; i++) {
+        if (n % i == 0) return 0;
     }
+
     return 1;
 }
 
 // Função para inicializar a matriz com números aleatórios
 void criarMatriz() {
-    matriz = (int **)malloc(MATRIZ_LINHAS * sizeof(int *));
+    matriz = (int**)malloc(MATRIZ_LINHAS * sizeof(int*));
     for (int i = 0; i < MATRIZ_LINHAS; i++) {
-        matriz[i] = (int *)malloc(MATRIZ_COLUNAS * sizeof(int));
+        matriz[i] = (int*)malloc(MATRIZ_COLUNAS * sizeof(int));
         for (int j = 0; j < MATRIZ_COLUNAS; j++) {
             matriz[i][j] = rand() % 32000; // Números aleatórios no intervalo 0 a 31999
         }
@@ -49,7 +52,9 @@ void buscaSerial() {
     for (int i = 0; i < MATRIZ_LINHAS; i++) {
         for (int j = 0; j < MATRIZ_COLUNAS; j++) {
             if (ehPrimo(matriz[i][j])) {
+                pthread_mutex_lock(&mutex_contador); // Bloquear o mutex
                 quantidade_primos++;
+                pthread_mutex_unlock(&mutex_contador); // Desbloquear o mutex
             }
         }
     }
