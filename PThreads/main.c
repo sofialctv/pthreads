@@ -49,9 +49,7 @@ void buscaSerial() {
     for (int i = 0; i < MATRIZ_LINHAS; i++) {
         for (int j = 0; j < MATRIZ_COLUNAS; j++) {
             if (ehPrimo(matriz[i][j])) {
-                pthread_mutex_lock(&mutex_contador); // Bloquear o mutex
                 quantidade_primos++;
-                pthread_mutex_unlock(&mutex_contador); // Desbloquear o mutex
             }
         }
     }
