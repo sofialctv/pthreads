@@ -15,6 +15,9 @@
 #define MATRIZ_COLUNAS 10000
 #define NUM_THREADS 4
 #define SEMENTE 321
+#define BLOCO_LINHAS 1000
+#define BLOCO_COLUNAS 1000
+
 
 // Matriz global e variável global para contagem de primos
 int** matriz;
@@ -24,13 +27,10 @@ pthread_mutex_t mutex_contador;
 // Função para verificar se um número é primo
 int ehPrimo(int n) {
     if (n <= 1) return 0; // se o numero for menor ou igual a 1 então nao é primo.
-
     int limite = sqrt(n);
-    printf("%d", limite);
     for (int i = 2; i * i <= n; i++) {
         if (n % i == 0) return 0;
     }
-
     return 1;
 }
 
@@ -52,9 +52,7 @@ void buscaSerial() {
     for (int i = 0; i < MATRIZ_LINHAS; i++) {
         for (int j = 0; j < MATRIZ_COLUNAS; j++) {
             if (ehPrimo(matriz[i][j])) {
-                pthread_mutex_lock(&mutex_contador); // Bloquear o mutex
                 quantidade_primos++;
-                pthread_mutex_unlock(&mutex_contador); // Desbloquear o mutex
             }
         }
     }
@@ -68,7 +66,20 @@ void buscaSerial() {
 }
 
 // Função para buscar primos paralelamente
-void buscaParalela() {}
+void buscaParalela() {
+    clock_t tempo_inicio = clock();
+
+    pthread_mutex_lock(&mutex_contador); // Bloquear o mutex
+    quantidade_primos++;
+    pthread_mutex_unlock(&mutex_contador); // Desbloquear o mutex
+
+    clock_t tempo_fim = clock();
+    double tempo_total = (double)(tempo_fim - tempo_inicio) / CLOCKS_PER_SEC;
+
+    printf("Busca Paralela:\n");
+    printf("Quantidade de primos: %d\n", quantidade_primos);
+    printf("Tempo decorrido: %f segundos\n", tempo_total);
+}
 
 int main() {
     // Inicializar mutex
