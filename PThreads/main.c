@@ -24,10 +24,18 @@ int** matriz;
 int quantidade_primos = 0;
 pthread_mutex_t mutex_contador;
 
+// Calcula o número total de blocos na matriz
+const int num_blocos_linha = MATRIZ_LINHAS / BLOCO_LINHAS;
+const int num_blocos_coluna = MATRIZ_COLUNAS / BLOCO_COLUNAS;
+int total_blocos;
+
+// Declaração da variável bloco_status globalmente
+int* bloco_status;
+
 // Função para verificar se um número é primo
 int ehPrimo(int n) {
     if (n <= 1) return 0; // se o numero for menor ou igual a 1 então nao é primo.
-    int limite = sqrt(n);
+    double limite = sqrt(n);
     for (int i = 2; i * i <= n; i++) {
         if (n % i == 0) return 0;
     }
@@ -65,13 +73,60 @@ void buscaSerial() {
     printf("Tempo decorrido: %f segundos\n", tempo_total);
 }
 
+// Função que cada thread executa
+void* trabalhoThread(void* arg) {
+    while (1) {
+        pthread_mutex_lock(&mutex_contador); // Bloquear o mutex antes de acessar block_status
+        int bloco_atual = -1;
+        for (int i = 0; i < total_blocos; i++) {
+            if (bloco_status[i] == 0) {
+                bloco_status[i] = 1;
+                bloco_atual = i;
+                break;
+            }
+        }
+        pthread_mutex_unlock(&mutex_contador); // Desbloquear o mutex após acessar block_status
+
+        if (bloco_atual == -1) break; // Todos os macroblocos já foram processados
+
+        // Calcular o intervalo de linhas que esta thread deve verificar
+        int start_row = (bloco_atual / num_blocos_coluna) * BLOCO_LINHAS;
+        int end_row = start_row + BLOCO_LINHAS;
+
+        // Calcular o intervalo de colunas
+        int start_col = (bloco_atual % num_blocos_coluna) * BLOCO_COLUNAS;
+        int end_col = start_col + BLOCO_COLUNAS;
+
+        // Verificar os números primos no intervalo de linhas e colunas atribuído
+        for (int i = start_row; i < end_row; i++) {
+            for (int j = start_col; j < end_col; j++) {
+                if (ehPrimo(matriz[i][j])) {
+                    pthread_mutex_lock(&mutex_contador); // Bloquear o mutex antes de acessar prime_count
+                    quantidade_primos++;
+                    pthread_mutex_unlock(&mutex_contador); // Desbloquear o mutex após acessar prime_count
+                }
+            }
+        }
+    }
+
+    pthread_exit(NULL);
+}
+
 // Função para buscar primos paralelamente
 void buscaParalela() {
     clock_t tempo_inicio = clock();
 
-    pthread_mutex_lock(&mutex_contador); // Bloquear o mutex
-    quantidade_primos++;
-    pthread_mutex_unlock(&mutex_contador); // Desbloquear o mutex
+    pthread_t threads[NUM_THREADS];
+
+    // Criar e executar threads
+    for (int i = 0; i < NUM_THREADS; i++) {
+        pthread_create(&threads[i], NULL, trabalhoThread, NULL);
+    }
+
+    // Aguardar as threads terminarem
+    for (int i = 0; i < NUM_THREADS; i++) {
+        pthread_join(threads[i], NULL);
+    }
 
     clock_t tempo_fim = clock();
     double tempo_total = (double)(tempo_fim - tempo_inicio) / CLOCKS_PER_SEC;
@@ -94,6 +149,19 @@ int main() {
 
     // Reiniciar contagem de primos
     quantidade_primos = 0;
+
+    // Calcula a quantidade de blocos na matriz
+    total_blocos = num_blocos_linha * num_blocos_coluna;
+
+    // Aloca memória para bloco_status
+    bloco_status = (int*)malloc(total_blocos * sizeof(int));
+
+    // Inicializa bloco_status
+    for (int i = 0; i < total_blocos; i++) {
+        bloco_status[i] = 0;
+    }
+
+    printf("\nNumero de blocos na matriz: %d\n\n", total_blocos);
 
     // Buscar primos paralelamente
     buscaParalela();
