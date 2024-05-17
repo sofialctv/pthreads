@@ -17,17 +17,15 @@
 #define SEMENTE 321
 #define BLOCO_LINHAS 1000
 #define BLOCO_COLUNAS 1000
+#define NUM_BLOCOS_LINHA (MATRIZ_LINHAS / BLOCO_LINHAS)
+#define NUM_BLOCOS_COLUNA (MATRIZ_COLUNAS / BLOCO_COLUNAS)
+#define TOTAL_BLOCOS (NUM_BLOCOS_LINHA * NUM_BLOCOS_COLUNA)
 
 
 // Matriz global e variável global para contagem de primos
 int** matriz;
 int quantidade_primos = 0;
 pthread_mutex_t mutex_contador;
-
-// Calcula o número total de blocos na matriz
-const int num_blocos_linha = MATRIZ_LINHAS / BLOCO_LINHAS;
-const int num_blocos_coluna = MATRIZ_COLUNAS / BLOCO_COLUNAS;
-int total_blocos;
 
 // Declaração da variável bloco_status globalmente
 int* bloco_status;
@@ -76,34 +74,34 @@ void buscaSerial() {
 // Função que cada thread executa
 void* trabalhoThread(void* arg) {
     while (1) {
-        pthread_mutex_lock(&mutex_contador); // Bloquear o mutex antes de acessar block_status
+        pthread_mutex_lock(&mutex_contador); // Bloquear o mutex antes de acessar bloco_status
         int bloco_atual = -1;
-        for (int i = 0; i < total_blocos; i++) {
+        for (int i = 0; i < TOTAL_BLOCOS; i++) {
             if (bloco_status[i] == 0) {
                 bloco_status[i] = 1;
                 bloco_atual = i;
                 break;
             }
         }
-        pthread_mutex_unlock(&mutex_contador); // Desbloquear o mutex após acessar block_status
+        pthread_mutex_unlock(&mutex_contador); // Desbloquear o mutex após acessar bloco_status
 
         if (bloco_atual == -1) break; // Todos os macroblocos já foram processados
 
         // Calcular o intervalo de linhas que esta thread deve verificar
-        int start_row = (bloco_atual / num_blocos_coluna) * BLOCO_LINHAS;
-        int end_row = start_row + BLOCO_LINHAS;
+        int linha_inicio = (bloco_atual / NUM_BLOCOS_COLUNA) * BLOCO_LINHAS;
+        int linha_fim = linha_inicio + BLOCO_LINHAS;
 
         // Calcular o intervalo de colunas
-        int start_col = (bloco_atual % num_blocos_coluna) * BLOCO_COLUNAS;
-        int end_col = start_col + BLOCO_COLUNAS;
+        int coluna_inicio = (bloco_atual % NUM_BLOCOS_COLUNA) * BLOCO_COLUNAS;
+        int coluna_fim = coluna_inicio + BLOCO_COLUNAS;
 
         // Verificar os números primos no intervalo de linhas e colunas atribuído
-        for (int i = start_row; i < end_row; i++) {
-            for (int j = start_col; j < end_col; j++) {
+        for (int i = linha_inicio; i < linha_fim; i++) {
+            for (int j = coluna_inicio; j < coluna_fim; j++) {
                 if (ehPrimo(matriz[i][j])) {
-                    pthread_mutex_lock(&mutex_contador); // Bloquear o mutex antes de acessar prime_count
+                    pthread_mutex_lock(&mutex_contador); // Bloquear o mutex antes de acessar quantidade_primos
                     quantidade_primos++;
-                    pthread_mutex_unlock(&mutex_contador); // Desbloquear o mutex após acessar prime_count
+                    pthread_mutex_unlock(&mutex_contador); // Desbloquear o mutex após acessar quantidade_primos
                 }
             }
         }
@@ -150,18 +148,15 @@ int main() {
     // Reiniciar contagem de primos
     quantidade_primos = 0;
 
-    // Calcula a quantidade de blocos na matriz
-    total_blocos = num_blocos_linha * num_blocos_coluna;
-
     // Aloca memória para bloco_status
-    bloco_status = (int*)malloc(total_blocos * sizeof(int));
+    bloco_status = (int*)malloc(TOTAL_BLOCOS * sizeof(int));
 
-    // Inicializa bloco_status
-    for (int i = 0; i < total_blocos; i++) {
+    // Inicializa cada índice de bloco_status com 0
+    for (int i = 0; i < TOTAL_BLOCOS; i++) {
         bloco_status[i] = 0;
     }
 
-    printf("\nNumero de blocos na matriz: %d\n\n", total_blocos);
+    printf("\nNumero de blocos na matriz: %d\n\n", TOTAL_BLOCOS);
 
     // Buscar primos paralelamente
     buscaParalela();
