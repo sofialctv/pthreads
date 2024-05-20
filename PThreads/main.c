@@ -43,8 +43,20 @@ int ehPrimo(int n) {
 // Função para inicializar a matriz com números aleatórios
 void criarMatriz() {
     matriz = (int**)malloc(MATRIZ_LINHAS * sizeof(int*));
+
+    if (matriz == NULL) {
+        printf("Erro ao alocar memoria para matriz");
+        exit(1);
+    }
+    
     for (int i = 0; i < MATRIZ_LINHAS; i++) {
         matriz[i] = (int*)malloc(MATRIZ_COLUNAS * sizeof(int));
+        
+        if (matriz[i] == NULL) {
+            printf("Erro ao alocar memoria para matriz");
+            exit(1);
+        }
+        
         for (int j = 0; j < MATRIZ_COLUNAS; j++) {
             matriz[i][j] = rand() % 32000; // Números aleatórios no intervalo 0 a 31999
         }
@@ -150,6 +162,11 @@ int main() {
 
     // Aloca memória para bloco_status
     bloco_status = (int*)malloc(TOTAL_BLOCOS * sizeof(int));
+    
+    if (bloco_status == NULL) {
+        printf("Erro ao alocar memoria para bloco_status");
+        exit(1);
+    }
 
     // Inicializa cada índice de bloco_status com 0
     for (int i = 0; i < TOTAL_BLOCOS; i++) {
