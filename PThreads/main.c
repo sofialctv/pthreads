@@ -11,12 +11,12 @@
 #include <time.h>
 #include <math.h>
 
-#define MATRIZ_LINHAS 10000
-#define MATRIZ_COLUNAS 10000
+#define MATRIZ_LINHAS 1000
+#define MATRIZ_COLUNAS 1000
 #define NUM_THREADS 4
 #define SEMENTE 321
-#define BLOCO_LINHAS 1000
-#define BLOCO_COLUNAS 1000
+#define BLOCO_LINHAS 1
+#define BLOCO_COLUNAS 1
 #define NUM_BLOCOS_LINHA (MATRIZ_LINHAS / BLOCO_LINHAS)
 #define NUM_BLOCOS_COLUNA (MATRIZ_COLUNAS / BLOCO_COLUNAS)
 #define TOTAL_BLOCOS (NUM_BLOCOS_LINHA * NUM_BLOCOS_COLUNA)
@@ -26,6 +26,7 @@
 int** matriz;
 int quantidade_primos = 0;
 pthread_mutex_t mutex_contador;
+pthread_mutex_t mutex_bloco_status;
 
 // Declaração da variável bloco_status globalmente
 int* bloco_status;
@@ -86,7 +87,7 @@ void buscaSerial() {
 // Função que cada thread executa
 void* trabalhoThread(void* arg) {
     while (1) {
-        pthread_mutex_lock(&mutex_contador); // Bloquear o mutex antes de acessar bloco_status
+        pthread_mutex_lock(&mutex_bloco_status); // Bloquear o mutex antes de acessar bloco_status
         int bloco_atual = -1;
         for (int i = 0; i < TOTAL_BLOCOS; i++) {
             if (bloco_status[i] == 0) {
@@ -95,9 +96,11 @@ void* trabalhoThread(void* arg) {
                 break;
             }
         }
-        pthread_mutex_unlock(&mutex_contador); // Desbloquear o mutex após acessar bloco_status
+        pthread_mutex_unlock(&mutex_bloco_status); // Desbloquear o mutex após acessar bloco_status
 
         if (bloco_atual == -1) break; // Todos os macroblocos já foram processados
+
+        printf("\nBloco atual: %d\n", bloco_atual);
 
         // Calcular o intervalo de linhas que esta thread deve verificar
         int linha_inicio = (bloco_atual / NUM_BLOCOS_COLUNA) * BLOCO_LINHAS;
@@ -147,8 +150,9 @@ void buscaParalela() {
 }
 
 int main() {
-    // Inicializar mutex
+    // Inicializar mutexes
     pthread_mutex_init(&mutex_contador, NULL);
+    pthread_mutex_init(&mutex_bloco_status, NULL);
 
     // Inicializar matriz
     srand(SEMENTE); // Semente pré-definida
