@@ -11,12 +11,12 @@
 #include <time.h>
 #include <math.h>
 
-#define MATRIZ_LINHAS 1000
-#define MATRIZ_COLUNAS 1000
+#define MATRIZ_LINHAS 10000
+#define MATRIZ_COLUNAS 10000
 #define NUM_THREADS 4
 #define SEMENTE 321
-#define BLOCO_LINHAS 1
-#define BLOCO_COLUNAS 1
+#define BLOCO_LINHAS 100
+#define BLOCO_COLUNAS 100
 #define NUM_BLOCOS_LINHA (MATRIZ_LINHAS / BLOCO_LINHAS)
 #define NUM_BLOCOS_COLUNA (MATRIZ_COLUNAS / BLOCO_COLUNAS)
 #define TOTAL_BLOCOS (NUM_BLOCOS_LINHA * NUM_BLOCOS_COLUNA)
@@ -100,8 +100,6 @@ void* trabalhoThread(void* arg) {
 
         if (bloco_atual == -1) break; // Todos os macroblocos já foram processados
 
-        printf("\nBloco atual: %d\n", bloco_atual);
-
         // Calcular o intervalo de linhas que esta thread deve verificar
         int linha_inicio = (bloco_atual / NUM_BLOCOS_COLUNA) * BLOCO_LINHAS;
         int linha_fim = linha_inicio + BLOCO_LINHAS;
@@ -145,6 +143,7 @@ void buscaParalela() {
     double tempo_total = (double)(tempo_fim - tempo_inicio) / CLOCKS_PER_SEC;
 
     printf("Busca Paralela:\n");
+    printf("Quantidade de threads: %d\n", NUM_THREADS);
     printf("Quantidade de primos: %d\n", quantidade_primos);
     printf("Tempo decorrido: %f segundos\n", tempo_total);
 }
