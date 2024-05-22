@@ -34,7 +34,7 @@ int* bloco_status;
 int ehPrimo(int n) {
     if (n <= 1) return 0; // se o numero for menor ou igual a 1 então nao é primo.
     double limite = sqrt(n);
-    for (int i = 2; i * i <= n; i++) {
+    for (int i = 2; i <= limite; i++) {
         if (n % i == 0) return 0;
     }
     return 1;
