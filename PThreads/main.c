@@ -190,8 +190,9 @@ int main() {
     }
     free(matriz);
 
-    // Destruir mutex
+    // Destruir mutexes
     pthread_mutex_destroy(&mutex_contador);
+    pthread_mutex_destroy(&mutex_bloco_status);
 
     return 0;
 }
