@@ -144,6 +144,7 @@ void buscaParalela() {
 
     printf("Busca Paralela:\n");
     printf("Quantidade de threads: %d\n", NUM_THREADS);
+    printf("Numero de blocos na matriz: %d\n", TOTAL_BLOCOS);
     printf("Quantidade de primos: %d\n", quantidade_primos);
     printf("Tempo decorrido: %f segundos\n", tempo_total);
 }
@@ -156,6 +157,8 @@ int main() {
     // Inicializar matriz
     srand(SEMENTE); // Semente pré-definida
     criarMatriz();
+
+    printf("Executando busca serial\n\n");
 
     // Buscar primos serialmente
     buscaSerial();
@@ -176,7 +179,7 @@ int main() {
         bloco_status[i] = 0;
     }
 
-    printf("\nNumero de blocos na matriz: %d\n\n", TOTAL_BLOCOS);
+    printf("\nExecutando busca paralela\n\n");
 
     // Buscar primos paralelamente
     buscaParalela();
