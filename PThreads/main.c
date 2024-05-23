@@ -13,10 +13,10 @@
 
 #define MATRIZ_LINHAS 10000
 #define MATRIZ_COLUNAS 10000
-#define NUM_THREADS 2
+#define NUM_THREADS 8
 #define SEMENTE 321
-#define BLOCO_LINHAS 1000
-#define BLOCO_COLUNAS 1000
+#define BLOCO_LINHAS 100
+#define BLOCO_COLUNAS 100
 #define NUM_BLOCOS_LINHA (MATRIZ_LINHAS / BLOCO_LINHAS)
 #define NUM_BLOCOS_COLUNA (MATRIZ_COLUNAS / BLOCO_COLUNAS)
 #define TOTAL_BLOCOS (NUM_BLOCOS_LINHA * NUM_BLOCOS_COLUNA)
@@ -48,15 +48,15 @@ void criarMatriz() {
         printf("Erro ao alocar memoria para matriz");
         exit(1);
     }
-    
+
     for (int i = 0; i < MATRIZ_LINHAS; i++) {
         matriz[i] = (int*)malloc(MATRIZ_COLUNAS * sizeof(int));
-        
+
         if (matriz[i] == NULL) {
             printf("Erro ao alocar memoria para matriz");
             exit(1);
         }
-        
+
         for (int j = 0; j < MATRIZ_COLUNAS; j++) {
             matriz[i][j] = rand() % 32000; // Números aleatórios no intervalo 0 a 31999
         }
@@ -64,7 +64,7 @@ void criarMatriz() {
 }
 
 // Função para buscar primos serialmente
-void buscaSerial() {
+double buscaSerial() {
     clock_t tempo_inicio = clock();
 
     for (int i = 0; i < MATRIZ_LINHAS; i++) {
@@ -81,6 +81,8 @@ void buscaSerial() {
     printf("Busca Serial:\n");
     printf("Quantidade de primos: %d\n", quantidade_primos);
     printf("Tempo decorrido: %f segundos\n", tempo_total);
+
+    return tempo_total;
 }
 
 // Função que cada thread executa
@@ -122,7 +124,7 @@ void* trabalhoThread(void* arg) {
 }
 
 // Função para buscar primos paralelamente
-void buscaParalela() {
+double buscaParalela() {
     clock_t tempo_inicio = clock();
 
     pthread_t threads[NUM_THREADS];
@@ -145,6 +147,8 @@ void buscaParalela() {
     printf("Numero de blocos na matriz: %d\n", TOTAL_BLOCOS);
     printf("Quantidade de primos: %d\n", quantidade_primos);
     printf("Tempo decorrido: %f segundos\n", tempo_total);
+
+    return tempo_total;
 }
 
 int main() {
@@ -156,15 +160,15 @@ int main() {
     srand(SEMENTE); // Semente pré-definida
     criarMatriz();
 
-    printf("Executando busca serial\n\n");
+    printf("#       Executando Busca Serial     #\n\n");
 
     // Buscar primos serialmente
-    buscaSerial();
+    double tempo_serial = buscaSerial();
 
     // Reiniciar contagem de primos
     quantidade_primos = 0;
 
-    printf("\nExecutando busca paralela\n\n");
+    printf("\n#     Executando busca paralela       #\n\n");
 
     // Iniciando matriz de controle de status dos blocos
     for (int i = 0; i < (NUM_BLOCOS_LINHA); i++) {
@@ -174,7 +178,11 @@ int main() {
     }
 
     // Buscar primos paralelamente
-    buscaParalela();
+    double tempo_paralelo = buscaParalela();
+
+    // Cálculo do speedup
+    double speedup = tempo_serial / tempo_paralelo;
+    printf("\nSpeedup: %f\n\n\n", speedup);
 
     // Liberar memória
     for (int i = 0; i < MATRIZ_LINHAS; i++) {
@@ -187,4 +195,6 @@ int main() {
     pthread_mutex_destroy(&mutex_bloco_status);
 
     return 0;
+    
+    system("pause");
 }
