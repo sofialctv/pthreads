@@ -101,7 +101,7 @@ void* trabalhoThread(void* arg) {
         if (bloco_atual == -1) break; // Todos os macroblocos já foram processados
 
         // Calcular o intervalo de linhas que esta thread deve verificar
-        int linha_inicio = (bloco_atual / NUM_BLOCOS_COLUNA) * BLOCO_LINHAS;
+        int linha_inicio = (bloco_atual / NUM_BLOCOS_LINHA) * BLOCO_LINHAS;
         int linha_fim = linha_inicio + BLOCO_LINHAS;
 
         // Calcular o intervalo de colunas
