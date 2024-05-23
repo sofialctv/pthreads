@@ -13,23 +13,22 @@
 
 #define MATRIZ_LINHAS 10000
 #define MATRIZ_COLUNAS 10000
-#define NUM_THREADS 4
+#define NUM_THREADS 2
 #define SEMENTE 321
-#define BLOCO_LINHAS 100
-#define BLOCO_COLUNAS 100
+#define BLOCO_LINHAS 1000
+#define BLOCO_COLUNAS 1000
 #define NUM_BLOCOS_LINHA (MATRIZ_LINHAS / BLOCO_LINHAS)
 #define NUM_BLOCOS_COLUNA (MATRIZ_COLUNAS / BLOCO_COLUNAS)
 #define TOTAL_BLOCOS (NUM_BLOCOS_LINHA * NUM_BLOCOS_COLUNA)
 
-
-// Matriz global e variável global para contagem de primos
+// Matriz principal, matriz de controle de blocos e variável global para contagem de primos
 int** matriz;
+int bloco_status[NUM_BLOCOS_LINHA][NUM_BLOCOS_COLUNA];
 int quantidade_primos = 0;
+
+// Mutexes de controle de RC's
 pthread_mutex_t mutex_contador;
 pthread_mutex_t mutex_bloco_status;
-
-// Declaração da variável bloco_status globalmente
-int* bloco_status;
 
 // Função para verificar se um número é primo
 int ehPrimo(int n) {
@@ -86,37 +85,36 @@ void buscaSerial() {
 
 // Função que cada thread executa
 void* trabalhoThread(void* arg) {
-    while (1) {
-        pthread_mutex_lock(&mutex_bloco_status); // Bloquear o mutex antes de acessar bloco_status
-        int bloco_atual = -1;
-        for (int i = 0; i < TOTAL_BLOCOS; i++) {
-            if (bloco_status[i] == 0) {
-                bloco_status[i] = 1;
-                bloco_atual = i;
-                break;
+    int contabilizar_bloco = 0;
+
+    for (int i = 0; i < NUM_BLOCOS_LINHA; i++) {
+        for (int j = 0; j < NUM_BLOCOS_COLUNA; j++) {
+            contabilizar_bloco = 0;
+            pthread_mutex_lock(&mutex_bloco_status);
+            if (bloco_status[i][j] == 0) {
+                bloco_status[i][j] = 1;
+                contabilizar_bloco = 1;
             }
-        }
-        pthread_mutex_unlock(&mutex_bloco_status); // Desbloquear o mutex após acessar bloco_status
+            pthread_mutex_unlock(&mutex_bloco_status);
+            if (contabilizar_bloco == 1) {
+                int linha_inicio = i * BLOCO_LINHAS;
+                int linha_fim = (i + 1) * BLOCO_LINHAS;
 
-        if (bloco_atual == -1) break; // Todos os macroblocos já foram processados
+                int coluna_inicio = j * BLOCO_COLUNAS;
+                int coluna_fim = (j + 1) * BLOCO_COLUNAS;
 
-        // Calcular o intervalo de linhas que esta thread deve verificar
-        int linha_inicio = (bloco_atual / NUM_BLOCOS_LINHA) * BLOCO_LINHAS;
-        int linha_fim = linha_inicio + BLOCO_LINHAS;
+                for (int i = linha_inicio; i < linha_fim; i++) {
+                    for (int j = coluna_inicio; j < coluna_fim; j++) {
+                        if (ehPrimo(matriz[i][j])) {
+                            pthread_mutex_lock(&mutex_contador);
+                            quantidade_primos++;
+                            pthread_mutex_unlock(&mutex_contador);
+                        }
 
-        // Calcular o intervalo de colunas
-        int coluna_inicio = (bloco_atual % NUM_BLOCOS_COLUNA) * BLOCO_COLUNAS;
-        int coluna_fim = coluna_inicio + BLOCO_COLUNAS;
-
-        // Verificar os números primos no intervalo de linhas e colunas atribuído
-        for (int i = linha_inicio; i < linha_fim; i++) {
-            for (int j = coluna_inicio; j < coluna_fim; j++) {
-                if (ehPrimo(matriz[i][j])) {
-                    pthread_mutex_lock(&mutex_contador); // Bloquear o mutex antes de acessar quantidade_primos
-                    quantidade_primos++;
-                    pthread_mutex_unlock(&mutex_contador); // Desbloquear o mutex após acessar quantidade_primos
+                    }
                 }
             }
+
         }
     }
 
@@ -166,20 +164,14 @@ int main() {
     // Reiniciar contagem de primos
     quantidade_primos = 0;
 
-    // Aloca memória para bloco_status
-    bloco_status = (int*)malloc(TOTAL_BLOCOS * sizeof(int));
-    
-    if (bloco_status == NULL) {
-        printf("Erro ao alocar memoria para bloco_status");
-        exit(1);
-    }
-
-    // Inicializa cada índice de bloco_status com 0
-    for (int i = 0; i < TOTAL_BLOCOS; i++) {
-        bloco_status[i] = 0;
-    }
-
     printf("\nExecutando busca paralela\n\n");
+
+    // Iniciando matriz de controle de status dos blocos
+    for (int i = 0; i < (NUM_BLOCOS_LINHA); i++) {
+        for (int j = 0; j < (NUM_BLOCOS_COLUNA); j++) {
+            bloco_status[i][j] = 0; // 0 - Não lido, 1 - Lido
+        }
+    }
 
     // Buscar primos paralelamente
     buscaParalela();
